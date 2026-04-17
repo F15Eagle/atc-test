@@ -2,16 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyGuide | ATC Simulator</title>
+    <title>Terminal Control v1.0</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="ui">
-        <div class="stats">Score: <span id="score">0</span> | Conflicts: <span id="conflicts">0</span></div>
-        <div class="instructions">Click a plane to rotate it 45°</div>
+    <div id="game-container">
+        <div id="sidebar">
+            <h2>Flight Strip</h2>
+            <div id="active-plane-info">Select a plane...</div>
+            <div id="controls" class="hidden">
+                <button onclick="issueCommand('LAND')">Land</button>
+                <button onclick="issueCommand('TAKEOFF')">Takeoff</button>
+                <button onclick="issueCommand('TAXI_GATE')">Taxi to Gate</button>
+                <button onclick="issueCommand('HOLD')">Hold Position</button>
+            </div>
+            <div id="logs"></div>
+        </div>
+        <canvas id="airportMap"></canvas>
     </div>
-    <canvas id="radar"></canvas>
     <script src="script.js"></script>
 </body>
 </html>
