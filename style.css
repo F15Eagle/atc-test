@@ -1,11 +1,34 @@
-body { margin: 0; background: #1a1a1a; color: #eee; font-family: sans-serif; overflow: hidden; }
-#game-container { display: flex; height: 100vh; }
-#sidebar { width: 300px; background: #2a2a2a; padding: 20px; border-right: 2px solid #444; }
-#airportMap { flex-grow: 1; background: #333; cursor: crosshair; }
-.hidden { display: none; }
-button { 
-    display: block; width: 100%; padding: 10px; margin: 5px 0; 
-    background: #444; color: white; border: 1px solid #666; cursor: pointer;
+:root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --accent: #58a6ff;
+    --text: #c9d1d9;
+    --danger: #f85149;
 }
-button:hover { background: #555; }
-.log-entry { font-size: 0.8rem; color: #aaa; margin-top: 5px; border-bottom: 1px solid #333; }
+
+body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; }
+#app { display: flex; height: 100vh; }
+
+#sidebar { width: 350px; background: var(--panel); display: flex; flex-direction: column; border-right: 1px solid #30363d; }
+.header { padding: 20px; background: #090c10; border-bottom: 1px solid #30363d; }
+h1 { margin: 0; font-size: 1.2rem; letter-spacing: 2px; }
+.v { color: var(--accent); font-size: 0.8rem; }
+
+#strips { flex-grow: 1; overflow-y: auto; padding: 10px; }
+.strip { background: #21262d; border-left: 4px solid var(--accent); margin-bottom: 8px; padding: 10px; font-size: 0.85rem; border-radius: 4px; }
+.strip.selected { background: #30363d; border-color: #fff; }
+
+#comms { height: 200px; background: #090c10; padding: 10px; font-family: monospace; font-size: 0.75rem; border-top: 2px solid #30363d; }
+
+#main-view { flex-grow: 1; position: relative; overflow: hidden; }
+canvas { display: block; width: 100%; height: 100%; }
+
+#command-bar { 
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: rgba(22, 27, 34, 0.95); padding: 15px; border-radius: 8px;
+    border: 1px solid var(--accent); backdrop-filter: blur(10px); width: 600px;
+}
+.btn-group { display: flex; gap: 10px; margin-top: 10px; }
+button { flex: 1; padding: 10px; background: #21262d; color: white; border: 1px solid #30363d; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+button:hover { background: var(--accent); }
+.hidden { display: none; }
