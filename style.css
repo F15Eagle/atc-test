@@ -1,22 +1,11 @@
-body {
-    margin: 0;
-    background: #0a0a0a;
-    color: #00ff41; /* Radar Green */
-    font-family: 'Courier New', Courier, monospace;
-    overflow: hidden;
+body { margin: 0; background: #1a1a1a; color: #eee; font-family: sans-serif; overflow: hidden; }
+#game-container { display: flex; height: 100vh; }
+#sidebar { width: 300px; background: #2a2a2a; padding: 20px; border-right: 2px solid #444; }
+#airportMap { flex-grow: 1; background: #333; cursor: crosshair; }
+.hidden { display: none; }
+button { 
+    display: block; width: 100%; padding: 10px; margin: 5px 0; 
+    background: #444; color: white; border: 1px solid #666; cursor: pointer;
 }
-
-#ui {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    pointer-events: none;
-    z-index: 10;
-}
-
-#radar {
-    display: block;
-    background: radial-gradient(circle, #1a2a1a 0%, #050505 100%);
-}
-
-.stats { font-size: 1.5rem; text-shadow: 0 0 5px #00ff41; }
+button:hover { background: #555; }
+.log-entry { font-size: 0.8rem; color: #aaa; margin-top: 5px; border-bottom: 1px solid #333; }
