@@ -1,123 +1,147 @@
-const canvas = document.getElementById('radar');
+const canvas = document.getElementById('airportMap');
 const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('score');
+const logEl = document.getElementById('logs');
+const controlPanel = document.getElementById('controls');
 
-canvas.width = window.innerWidth;
+canvas.width = window.innerWidth - 300;
 canvas.height = window.innerHeight;
 
-let planes = [];
-let score = 0;
-let gameOver = false;
+// --- Game Constants ---
+const RUNWAY_Y = canvas.height / 2;
+const GATE_X = 100;
+const MAP_SCALE = 1;
 
-// --- Sound Effects ---
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playBeep(freq, duration) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
-}
+let aircrafts = [];
+let selectedPlane = null;
 
-class Plane {
-    constructor() {
-        this.reset();
-    }
-
-    reset() {
-        const side = Math.floor(Math.random() * 4);
-        if(side === 0) { this.x = 0; this.y = Math.random() * canvas.height; this.angle = 0; }
-        else if(side === 1) { this.x = canvas.width; this.y = Math.random() * canvas.height; this.angle = Math.PI; }
-        else if(side === 2) { this.x = Math.random() * canvas.width; this.y = 0; this.angle = Math.PI/2; }
-        else { this.x = Math.random() * canvas.width; this.y = canvas.height; this.angle = -Math.PI/2; }
-        
-        this.speed = 1 + Math.random() * 1.5;
-        this.id = Math.floor(100 + Math.random() * 899);
-        this.radius = 15;
+class Aircraft {
+    constructor(callsign, type) {
+        this.callsign = callsign;
+        this.type = type;
+        this.x = canvas.width + 50;
+        this.y = 100 + Math.random() * 100;
+        this.status = 'APPROACH'; // APPROACH, LANDING, TAXIING, AT_GATE, TAKEOFF
+        this.speed = 1.5;
+        this.targetX = this.x;
+        this.targetY = this.y;
     }
 
     update() {
-        this.x += Math.cos(this.angle) * this.speed;
-        this.y += Math.sin(this.angle) * this.speed;
+        // Simple movement logic towards targets
+        if (this.status === 'APPROACH') {
+            this.x -= this.speed;
+        } else if (this.status === 'LANDING') {
+            this.moveTo(canvas.width / 2, RUNWAY_Y, 2);
+            if (Math.abs(this.x - canvas.width/2) < 5) this.status = 'ON_RUNWAY';
+        } else if (this.status === 'TAXIING') {
+            this.moveTo(GATE_X, 100, 1);
+            if (Math.abs(this.x - GATE_X) < 5) this.status = 'AT_GATE';
+        } else if (this.status === 'TAKEOFF') {
+            this.x += 4;
+            if (this.x > canvas.width) this.reset();
+        }
+    }
 
-        // Scoring for passing through
-        if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
-            score += 10;
-            scoreEl.innerText = score;
-            playBeep(880, 0.1);
-            this.reset();
+    moveTo(tx, ty, s) {
+        const dx = tx - this.x;
+        const dy = ty - this.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 5) {
+            this.x += (dx / dist) * s;
+            this.y += (dy / dist) * s;
         }
     }
 
     draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-        
-        // Plane Shape
-        ctx.strokeStyle = '#00ff41';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(10, 0); ctx.lineTo(-10, -8); ctx.lineTo(-10, 8); ctx.closePath();
-        ctx.stroke();
+        ctx.fillStyle = (selectedPlane === this) ? '#ffff00' : '#00ff00';
+        ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+        ctx.font = "12px Monospace";
+        ctx.fillText(this.callsign, this.x + 15, this.y);
+        ctx.fillText(this.status, this.x + 15, this.y + 12);
+    }
 
-        // Data block
-        ctx.rotate(-this.angle);
-        ctx.fillStyle = '#00ff41';
-        ctx.fillText(`FL280 / AA${this.id}`, 15, -15);
-        ctx.restore();
+    reset() {
+        this.x = canvas.width + 50;
+        this.y = 100;
+        this.status = 'APPROACH';
     }
 }
 
-// Initialize Planes
-for(let i=0; i<5; i++) planes.push(new Plane());
+// Spawn some planes
+aircrafts.push(new Aircraft('UAL241', 'B738'));
+aircrafts.push(new Aircraft('AFR010', 'A350'));
 
-// Input handling
-canvas.addEventListener('mousedown', (e) => {
-    planes.forEach(p => {
-        const dist = Math.hypot(p.x - e.clientX, p.y - e.clientY);
-        if (dist < 30) {
-            p.angle += Math.PI / 4; // Rotate 45 degrees
-            playBeep(440, 0.05);
-        }
+function drawMap() {
+    // Runway
+    ctx.fillStyle = '#555';
+    ctx.fillRect(100, RUNWAY_Y - 20, canvas.width - 200, 40);
+    ctx.strokeStyle = '#fff';
+    ctx.setLineDash([20, 15]);
+    ctx.beginPath();
+    ctx.moveTo(100, RUNWAY_Y); ctx.lineTo(canvas.width - 100, RUNWAY_Y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawMap();
+    
+    aircrafts.forEach(a => {
+        a.update();
+        a.draw();
     });
+    
+    requestAnimationFrame(gameLoop);
+}
+
+// Interaction
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    
+    selectedPlane = aircrafts.find(a => Math.hypot(a.x - mx, a.y - my) < 30);
+    
+    if (selectedPlane) {
+        controlPanel.classList.remove('hidden');
+        document.getElementById('active-plane-info').innerHTML = `
+            <strong>${selectedPlane.callsign}</strong><br>Status: ${selectedPlane.status}
+        `;
+    } else {
+        controlPanel.classList.add('hidden');
+    }
 });
 
-function checkCollisions() {
-    for(let i=0; i<planes.length; i++) {
-        for(let j=i+1; j<planes.length; j++) {
-            const dist = Math.hypot(planes[i].x - planes[j].x, planes[i].y - planes[j].y);
-            if (dist < 25) {
-                playBeep(110, 0.5);
-                alert("Mid-air Collision! Game Over.");
-                location.reload();
-            }
-        }
-    }
-}
-
-function animate() {
-    ctx.fillStyle = 'rgba(10, 10, 10, 0.2)'; // Fading trail effect
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+function issueCommand(cmd) {
+    if (!selectedPlane) return;
     
-    // Draw Radar Circles
-    ctx.strokeStyle = '#004400';
-    ctx.beginPath();
-    ctx.arc(canvas.width/2, canvas.height/2, 200, 0, Math.PI*2);
-    ctx.stroke();
-
-    planes.forEach(p => {
-        p.update();
-        p.draw();
-    });
-
-    checkCollisions();
-    requestAnimationFrame(animate);
+    playBeep(600, 0.1);
+    const log = document.createElement('div');
+    log.className = 'log-entry';
+    
+    if (cmd === 'LAND' && selectedPlane.status === 'APPROACH') {
+        selectedPlane.status = 'LANDING';
+        log.innerText = `${selectedPlane.callsign}: Cleared to land Runway 09.`;
+    } else if (cmd === 'TAXI_GATE' && selectedPlane.status === 'ON_RUNWAY') {
+        selectedPlane.status = 'TAXIING';
+        log.innerText = `${selectedPlane.callsign}: Taxi to Gate 4 via Alpha.`;
+    } else if (cmd === 'TAKEOFF' && selectedPlane.status === 'AT_GATE') {
+        selectedPlane.status = 'TAKEOFF';
+        log.innerText = `${selectedPlane.callsign}: Cleared for takeoff!`;
+    }
+    
+    logEl.prepend(log);
 }
 
-animate();
+function playBeep(f, d) {
+    const a = new (window.AudioContext || window.webkitAudioContext)();
+    const o = a.createOscillator();
+    const g = a.createGain();
+    o.frequency.value = f;
+    o.connect(g); g.connect(a.destination);
+    o.start(); g.gain.exponentialRampToValueAtTime(0.00001, a.currentTime + d);
+    o.stop(a.currentTime + d);
+}
+
+gameLoop();
