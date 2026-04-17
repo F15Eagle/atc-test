@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    background: #0a0a0a;
+    color: #00ff41; /* Radar Green */
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+}
+
+#ui {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#radar {
+    display: block;
+    background: radial-gradient(circle, #1a2a1a 0%, #050505 100%);
+}
+
+.stats { font-size: 1.5rem; text-shadow: 0 0 5px #00ff41; }
